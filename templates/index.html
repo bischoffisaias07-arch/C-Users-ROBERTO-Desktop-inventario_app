@@ -31,20 +31,38 @@
                placeholder="Código del producto"
                inputmode="numeric" pattern="[0-9]*"
                oninput="this.value=this.value.replace(/[^0-9]/g,'')">
- <!-- Fecha de vencimiento -->
+        <!-- Fecha de vencimiento -->
 <div class="col-12">
     <label class="form-label">Fecha de vencimiento</label>
     <input type="date" id="fecha" class="form-control form-control-lg"
            onkeydown="if(event.key==='Enter'){agregarProducto();}">
+    <!-- Tarjeta de lista -->
+<div class="card p-4 shadow-lg border-0">
+    <h4 class="mb-3 text-warning d-flex justify-content-between align-items-center">
+        📋 Lista de productos
+        <button class="btn btn-sm btn-outline-warning" 
+                type="button" 
+                data-bs-toggle="collapse" 
+                data-bs-target="#listaCollapse" 
+                aria-expanded="true" 
+                aria-controls="listaCollapse">
+            Mostrar / Ocultar
+        </button>
+    </h4>
+
+    <div class="collapse show" id="listaCollapse">
+        <ul id="lista" class="list-group"></ul>
+    </div>
+</div>
+</div>
 </div>
 
-</div>
-
-<!-- Botón verde de agregar -->
+<!-- Botón verde -->
 <button class="btn btn-success btn-sm mt-3 w-100" onclick="agregarProducto()">Agregar producto</button>
 
-<!-- Botón amarillo de guardar Excel debajo -->
+<!-- Botón amarillo -->
 <button class="btn btn-warning btn-sm mt-3 w-100" onclick="guardarLista()">Guardar y descargar Excel</button>
+
     <!-- Tarjeta de lista de productos -->
     <div class="card p-4 shadow-lg border-0">
         <h4 class="mb-3 text-warning d-flex justify-content-between align-items-center">
@@ -66,36 +84,36 @@
 
     <!-- ✅ Aquí empieza tu JavaScript -->
     <script>
-        function agregarProducto() {
-            const nombre = document.getElementById("nombre").value;
-            const codigo = document.getElementById("codigo").value;
-            const fecha = document.getElementById("fecha").value;
+    function agregarProducto() {
+        const nombre = document.getElementById("nombre").value;
+        const codigo = document.getElementById("codigo").value;
+        const fecha = document.getElementById("fecha").value;
 
-            if (nombre && codigo && fecha) {
-                const lista = document.getElementById("lista");
-                const item = document.createElement("li");
-                item.className = "list-group-item";
-                item.textContent = `${nombre} - Código: ${codigo} - Vence: ${fecha}`;
-                lista.appendChild(item);
+        if (nombre && codigo && fecha) {
+            const lista = document.getElementById("lista");
+            const item = document.createElement("li");
+            item.className = "list-group-item";
+            item.textContent = `${nombre} - Código: ${codigo} - Vence: ${fecha}`;
+            lista.appendChild(item);
 
-                // limpiar campos
-                document.getElementById("nombre").value = "";
-                document.getElementById("codigo").value = "";
-                document.getElementById("fecha").value = "";
+            // limpiar campos
+            document.getElementById("nombre").value = "";
+            document.getElementById("codigo").value = "";
+            document.getElementById("fecha").value = "";
 
-                // volver el foco al campo código
-                document.getElementById("codigo").focus();
-            }
+            // volver el foco al campo código
+            document.getElementById("codigo").focus();
         }
+    }
 
-        function guardarLista() {
-            // Aquí va tu lógica para exportar la lista a Excel
-            alert("Función de guardar Excel todavía pendiente de implementar");
-        }
-    </script>
+    function guardarLista() {
+        alert("Aquí iría la lógica para exportar la lista a Excel.");
+    }
+</script>
 
     <!-- ✅ Bootstrap JS necesario para que funcione el collapse -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+   
 </body>
 </html>
 
@@ -457,6 +475,7 @@ function borrarProductoTabla(index) {
 renderTablaProductos();
 renderArticulosTabla();
 </script>
+
 
 
 
