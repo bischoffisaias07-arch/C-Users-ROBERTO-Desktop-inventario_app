@@ -2,9 +2,10 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <!-- ✅ Adaptación a móviles -->
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>ARCHIVO VENCIMIENTO</title>
-    <!-- Favicon relacionado con vencimiento -->
+    <!-- ✅ Favicon relacionado con vencimiento -->
     <link rel="icon" type="image/png" href="/static/favicon.png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/static/style.css">
@@ -17,6 +18,7 @@
     <div class="card p-4 mb-4 shadow-lg border-0">
         <h4 class="mb-3 text-success">➕ Agregar producto</h4>
         <div class="row g-3">
+            <!-- ✅ Campo código solo numérico -->
             <div class="col-12 col-md-4">
                 <label class="form-label">Código</label>
                 <input type="text" id="codigo" inputmode="numeric" pattern="[0-9]*"
@@ -35,6 +37,7 @@
         <button class="btn btn-success btn-sm mt-3 w-100" onclick="agregarProducto()">Agregar producto</button>
     </div>
 
+    <!-- Tu lógica original de lista y botones sigue aquí -->
     <div class="card p-4 shadow-lg border-0">
         <h4 class="mb-3 text-warning">📋 Lista de productos</h4>
         <ul id="lista" class="list-group"></ul>
