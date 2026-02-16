@@ -62,41 +62,4 @@
       const descripcion = document.getElementById("descripcion").value;
       const fecha = document.getElementById("fecha").value;
 
-      const lista = document.getElementById("lista-items");
-      const item = document.createElement("li");
-      item.className = "list-group-item";
-
-      const texto = document.createElement("span");
-      texto.textContent = `${codigo} - ${descripcion} (${fecha})`;
-
-      const btnBorrar = document.createElement("button");
-      btnBorrar.className = "btn btn-danger btn-sm ms-2";
-      btnBorrar.textContent = "Borrar";
-      btnBorrar.onclick = () => {
-        lista.removeChild(item);
-        const index = registros.findIndex(r => r.Codigo === codigo);
-        if (index > -1) registros.splice(index, 1);
-      };
-
-      item.appendChild(texto);
-      item.appendChild(btnBorrar);
-      lista.appendChild(item);
-
-      registros.push({Codigo: codigo, Descripción: descripcion, Fecha: fecha});
-
-      document.getElementById("formulario").reset();
-    });
-
-    document.getElementById("exportar").addEventListener("click", function() {
-      if (registros.length === 0) {
-        alert("No hay registros para exportar.");
-        return;
-      }
-      const wb = XLSX.utils.book_new();
-      const ws = XLSX.utils.json_to_sheet(registros);
-      XLSX.utils.book_append_sheet(wb, ws, "Inventario");
-      XLSX.writeFile(wb, "Inventario.xlsx");
-    });
-  </script>
-</body>
-</html>
+      const lista = document.getElementById("
