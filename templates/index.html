@@ -37,7 +37,7 @@
 <div class="col-12">
     <label class="form-label">Fecha de vencimiento</label>
     <input type="date" id="fecha" class="form-control form-control-lg"
-           onchange="document.getElementById('codigo').focus()">
+           onchange="agregarProducto()">
 </div>
 </div>
 <button class="btn btn-success btn-sm mt-3 w-100" onclick="agregarProducto()">Agregar producto</button>
@@ -409,6 +409,7 @@ function borrarProductoTabla(index) {
 renderTablaProductos();
 renderArticulosTabla();
 </script>
+
 
 
 
