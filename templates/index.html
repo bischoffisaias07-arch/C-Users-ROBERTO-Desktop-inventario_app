@@ -1,81 +1,119 @@
-<div class="card p-4 mb-4 shadow-lg border-0">
-    <h4 class="mb-3 text-success">➕ Agregar producto</h4>
-    <div class="row g-3">
-        <div class="col-12 col-md-4">
-            <label class="form-label">Nombre del artículo</label>
-            <input type="text" id="nombre" list="articulos" class="form-control form-control-sm">
-            <datalist id="articulos">
-                <option value="Pollo Fresco GTA x Kg">
-                <option value="Leche Entera 1L">
-                <option value="Arroz 1Kg">
-            </datalist>
+<div class="container mt-4">
+    <!-- Título -->
+    <h1 class="text-center mb-4 text-primary text-uppercase fw-bold">ARCHIVO VENCIMIENTO</h1>
+
+    <!-- Formulario -->
+    <div class="card p-4 mb-4 shadow-lg border-0">
+        <h4 class="mb-3 text-success">➕ Agregar producto</h4>
+        <div class="row g-3">
+            <!-- Nombre -->
+            <div class="col-12 col-md-4">
+                <label class="form-label">Nombre del artículo</label>
+                <input type="text" id="nombre" list="articulos" 
+                       class="form-control form-control-lg" 
+                       placeholder="Seleccione o escribe para filtrar">
+                <datalist id="articulos">
+                    <option value="Pollo Fresco GTA x Kg">
+                    <option value="Leche Entera 1L">
+                    <option value="Arroz 1Kg">
+                </datalist>
+            </div>
+
+            <!-- Código -->
+            <div class="col-12 col-md-4">
+                <label class="form-label">Código</label>
+                <input type="text" id="codigo" 
+                       class="form-control form-control-lg" 
+                       placeholder="Código del producto"
+                       inputmode="numeric" pattern="[0-9]*"
+                       oninput="this.value=this.value.replace(/[^0-9]/g,'')"
+                       onkeydown="if(event.key==='Enter'){document.getElementById('fecha').focus();}">
+            </div>
+
+            <!-- Fecha -->
+            <div class="col-12 col-md-4">
+                <label class="form-label">Fecha de vencimiento</label>
+                <input type="date" id="fecha" class="form-control form-control-lg"
+                       onkeydown="if(event.key==='Enter'){agregarProducto();}">
+            </div>
         </div>
 
-        <div class="col-12 col-md-4">
-            <label class="form-label">Código</label>
-            <input type="text" id="codigo" class="form-control form-control-sm"
-                   inputmode="numeric" pattern="[0-9]*"
-                   oninput="this.value=this.value.replace(/[^0-9]/g,'')"
-                   onkeydown="if(event.key==='Enter'){agregarProducto();}">
-        </div>
-
-        <div class="col-12 col-md-4">
-            <label class="form-label">Fecha de vencimiento</label>
-            <input type="date" id="fecha" class="form-control form-control-sm"
-                   onkeydown="if(event.key==='Enter'){agregarProducto();}">
-        </div>
+        <!-- Botón verde -->
+        <button class="btn btn-success btn-lg mt-3 w-100" onclick="agregarProducto()">Agregar producto</button>
     </div>
 
-    <button class="btn btn-success btn-sm mt-3 w-100" onclick="agregarProducto()">Agregar producto</button>
-    <button class="btn btn-warning btn-sm mt-3 w-100" onclick="guardarLista()">Guardar y descargar Excel</button>
-</div>
+    <!-- Lista -->
+    <div class="card p-4 shadow-lg border-0">
+        <h4 class="mb-3 text-warning d-flex justify-content-between align-items-center">
+            📋 Lista de productos
+            <button class="btn btn-sm btn-outline-warning" 
+                    type="button" 
+                    data-bs-toggle="collapse" 
+                    data-bs-target="#listaCollapse" 
+                    aria-expanded="true" 
+                    aria-controls="listaCollapse">
+                Mostrar / Ocultar
+            </button>
+        </h4>
 
-<div class="card p-4 shadow-lg border-0">
-    <h4 class="mb-3 text-warning d-flex justify-content-between align-items-center">
-        📋 Lista de productos
-        <button class="btn btn-sm btn-outline-warning" type="button"
-                data-bs-toggle="collapse" data-bs-target="#listaCollapse"
-                aria-expanded="true" aria-controls="listaCollapse">
-            Mostrar / Ocultar
-        </button>
-    </h4>
-    <div class="collapse show" id="listaCollapse">
-        <ul id="lista" class="list-group"></ul>
+        <div class="collapse show" id="listaCollapse">
+            <ul id="lista" class="list-group"></ul>
+        </div>
+
+        <!-- Botón amarillo fijo debajo -->
+        <button class="btn btn-warning btn-lg mt-3 w-100" onclick="guardarLista()">Guardar y descargar Excel</button>
     </div>
 </div>
+
+<!-- Script -->
 <script>
-function agregarProducto() {
-    const nombre = document.getElementById("nombre").value.trim();
-    const codigo = document.getElementById("codigo").value.trim();
-    const fecha = document.getElementById("fecha").value.trim();
+    function agregarProducto() {
+        const nombre = document.getElementById("nombre").value.trim();
+        const codigo = document.getElementById("codigo").value.trim();
+        const fecha = document.getElementById("fecha").value.trim();
 
-    if (nombre && codigo && fecha) {
-        const lista = document.getElementById("lista");
-        const item = document.createElement("li");
-        item.className = "list-group-item";
-        item.textContent = `${nombre} - Código: ${codigo} - Vence: ${fecha}`;
-        lista.appendChild(item);
+        if (nombre && codigo && fecha) {
+            const lista = document.getElementById("lista");
+            const item = document.createElement("li");
+            item.className = "list-group-item d-flex justify-content-between align-items-center";
+            item.innerHTML = `
+                <span>${nombre} - Código: ${codigo} - Vence: ${fecha}</span>
+                <div>
+                    <button class="btn btn-sm btn-primary me-2" onclick="modificarFecha(this)">Modificar</button>
+                    <button class="btn btn-sm btn-danger" onclick="this.parentElement.parentElement.remove()">Borrar</button>
+                </div>
+            `;
+            lista.appendChild(item);
 
-        document.getElementById("nombre").value = "";
-        document.getElementById("codigo").value = "";
-        document.getElementById("fecha").value = "";
-        document.getElementById("codigo").focus();
-    } else {
-        alert("Completa nombre, código y fecha antes de agregar.");
+            // limpiar campos
+            document.getElementById("nombre").value = "";
+            document.getElementById("codigo").value = "";
+            document.getElementById("fecha").value = "";
+
+            // volver el foco al campo código
+            document.getElementById("codigo").focus();
+        } else {
+            alert("Completa nombre, código y fecha antes de agregar.");
+        }
     }
-}
 
-function guardarLista() {
-    alert("Aquí iría la lógica para exportar la lista a Excel.");
-}
+    function modificarFecha(btn) {
+        const li = btn.parentElement.parentElement;
+        const datos = li.querySelector("span").textContent.split(" - ");
+        const nuevoFecha = prompt("Nueva fecha de vencimiento (YYYY-MM-DD):", datos[2].replace("Vence: ",""));
+        if (nuevoFecha) {
+            datos[2] = "Vence: " + nuevoFecha;
+            li.querySelector("span").textContent = datos.join(" - ");
+        }
+    }
+
+    function guardarLista() {
+        alert("Aquí iría la lógica para exportar la lista a Excel.");
+    }
 </script>
+
+<!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
-
-
-
-
 
 
 
