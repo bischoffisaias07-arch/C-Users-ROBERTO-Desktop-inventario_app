@@ -31,13 +31,13 @@
                placeholder="Código del producto"
                inputmode="numeric" pattern="[0-9]*"
                oninput="this.value=this.value.replace(/[^0-9]/g,'')">
- 
-    <!-- Fecha de vencimiento -->
+ <!-- Fecha de vencimiento -->
 <div class="col-12">
     <label class="form-label">Fecha de vencimiento</label>
     <input type="date" id="fecha" class="form-control form-control-lg"
-           onchange="agregarProducto()">
+           onkeydown="if(event.key==='Enter'){agregarProducto();}">
 </div>
+
 </div>
 
 <!-- Botón verde de agregar -->
@@ -457,6 +457,7 @@ function borrarProductoTabla(index) {
 renderTablaProductos();
 renderArticulosTabla();
 </script>
+
 
 
 
