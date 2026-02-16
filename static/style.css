@@ -10,4 +10,16 @@ h1 {
 .list-group-item {
     font-size: 0.9rem;
     line-height: 1.4;
+
+}
+/* Para Chrome, Safari, Edge */
+.no-spinner::-webkit-inner-spin-button,
+.no-spinner::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Para Firefox */
+.no-spinner {
+  -moz-appearance: textfield;
 }
