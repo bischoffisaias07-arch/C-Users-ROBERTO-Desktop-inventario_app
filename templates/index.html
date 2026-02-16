@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Archivo Vencimiento</title>
   <!-- Logo en pestaña -->
-  <link rel="icon" type="image/png" href="/estatica/logo.png">
+  <link rel="icon" type="image/png" href="/logo.png.webp">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
@@ -21,147 +21,66 @@
   </style>
 </head>
 <body>
-<div class="container mt-4">
-  <!-- Encabezado con logo -->
-  <h1 class="text-center mb-4 text-uppercase fw-bold d-flex align-items-center justify-content-center">
-    <img src="/estatica/logo.png" alt="Logo" style="height:50px; margin-right:10px;">
-    ARCHIVO VENCIMIENTO
-  </h1>
+  <div class="container mt-4">
+    <!-- Encabezado con logo -->
+    <h1 class="text-center mb-4 text-uppercase fw-bold d-flex align-items-center justify-content-center">
+      <img src="/logo.png.webp" alt="Logo" style="height:40px; margin-right:10px;">
+      Inventario
+    </h1>
 
-  <!-- Formulario -->
-  <div class="card p-4 mb-4 shadow-lg border-0">
-    <h4 class="mb-3" style="color:#06D6A0;">➕ Agregar producto</h4>
-
-    <div class="row g-3">
-      <div class="col-12 col-md-4">
-        <label class="form-label">Nombre del artículo</label>
-        <input type="text" id="nombre" list="articulos" class="form-control form-control-lg"
-               placeholder="Seleccione o escriba para filtrar">
-        <datalist id="articulos"></datalist>
-      </div>
-
-      <div class="col-12 col-md-4">
+    <!-- Formulario -->
+    <form id="formulario">
+      <div class="mb-3">
         <label class="form-label">Código</label>
-        <input type="text" id="codigo" class="form-control form-control-lg"
-               placeholder="Código del producto"
-               inputmode="numeric" pattern="[0-9]*"
-               oninput="this.value=this.value.replace(/[^0-9]/g,'')"
-               onkeydown="if(event.key==='Enter'){document.getElementById('fecha').focus();}">
+        <input type="text" id="codigo" class="form-control" required>
       </div>
-
-      <div class="col-12 col-md-4">
-        <label class="form-label">Fecha de vencimiento</label>
-        <input type="date" id="fecha" class="form-control form-control-lg"
-               onkeydown="if(event.key==='Enter'){agregarProducto();}">
+      <div class="mb-3">
+        <label class="form-label">Descripción</label>
+        <input type="text" id="descripcion" class="form-control" required>
       </div>
-    </div>
+      <div class="mb-3">
+        <label class="form-label">Fecha</label>
+        <input type="date" id="fecha" class="form-control" required>
+      </div>
+      <button type="submit" class="btn btn-success">Agregar</button>
+      <button type="button" id="exportar" class="btn btn-warning ms-2">Exportar a Excel</button>
+    </form>
 
-    <button class="btn btn-success btn-lg mt-3 w-100" onclick="agregarProducto()">Agregar producto</button>
-    <button class="btn btn-warning btn-lg mt-3 w-100" onclick="guardarLista()">Guardar y descargar Excel</button>
+    <!-- Lista -->
+    <ul id="lista-items" class="list-group mt-4"></ul>
   </div>
 
-  <!-- Lista -->
-  <div class="card p-4 shadow-lg border-0">
-    <h4 class="mb-3 d-flex justify-content-between align-items-center" style="color:#FFD166;">
-      📋 Lista de productos
-      <button class="btn btn-sm btn-outline-warning" type="button"
-              data-bs-toggle="collapse" data-bs-target="#listaCollapse"
-              aria-expanded="true" aria-controls="listaCollapse">
-        Mostrar / Ocultar
-      </button>
-    </h4>
-    <div class="collapse show" id="listaCollapse">
-      <ul id="lista" class="list-group"></ul>
-    </div>
-  </div>
-</div>
+  <script>
+    const registros = [];
 
-<!-- Script -->
-<script>
-function agregarProducto() {
-  const nombre = document.getElementById("nombre").value.trim();
-  const codigo = document.getElementById("codigo").value.trim();
-  const fecha = document.getElementById("fecha").value.trim();
+    document.getElementById("formulario").addEventListener("submit", function(e) {
+      e.preventDefault();
+      const codigo = document.getElementById("codigo").value;
+      const descripcion = document.getElementById("descripcion").value;
+      const fecha = document.getElementById("fecha").value;
 
-  if ((nombre || codigo) && fecha) {
-    const lista = document.getElementById("lista");
-    const item = document.createElement("li");
-    item.className = "list-group-item d-flex justify-content-between align-items-center";
-    item.innerHTML = `
-      <span>${nombre ? nombre : "(Sin nombre)"} - Código: ${codigo ? codigo : "(Sin código)"} - Vence: ${fecha}</span>
-      <div>
-        <button class="btn btn-sm btn-primary me-2" onclick="modificarFecha(this)">Modificar</button>
-        <button class="btn btn-sm btn-danger" onclick="this.parentElement.parentElement.remove()">Borrar</button>
-      </div>
-    `;
-    lista.appendChild(item);
+      const lista = document.getElementById("lista-items");
+      const item = document.createElement("li");
+      item.className = "list-group-item";
+      item.textContent = `${codigo} - ${descripcion} (${fecha})`;
+      lista.appendChild(item);
 
-    document.getElementById("nombre").value = "";
-    document.getElementById("codigo").value = "";
-    document.getElementById("fecha").value = "";
-    document.getElementById("codigo").focus();
-  } else {
-    alert("Completa al menos nombre o código, y la fecha.");
-  }
-}
+      registros.push({Codigo: codigo, Descripción: descripcion, Fecha: fecha});
 
-function modificarFecha(btn) {
-  const li = btn.parentElement.parentElement;
-  const datos = li.querySelector("span").textContent.split(" - ");
-  const nuevoFecha = prompt("Nueva fecha de vencimiento (YYYY-MM-DD):", datos[2].replace("Vence: ",""));
-  if (nuevoFecha) {
-    datos[2] = "Vence: " + nuevoFecha;
-    li.querySelector("span").textContent = datos.join(" - ");
-  }
-}
-
-function guardarLista() {
-  const lista = document.querySelectorAll("#lista li span");
-  if (lista.length === 0) {
-    alert("No hay productos en la lista.");
-    return;
-  }
-
-  const datos = [];
-  lista.forEach(item => {
-    const partes = item.textContent.split(" - ");
-    datos.push({
-      Nombre: partes[0],
-      Código: partes[1].replace("Código: ",""),
-      Fecha: partes[2].replace("Vence: ","")
+      document.getElementById("formulario").reset();
     });
-  });
 
-  const ws = XLSX.utils.json_to_sheet(datos);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Productos");
-  XLSX.writeFile(wb, "productos.xlsx");
-}
-
-// Leer Inventario.xlsx directamente desde carpeta 'estatica'
-window.addEventListener("load", function() {
-  fetch("/estatica/Inventario.xlsx")
-    .then(res => res.arrayBuffer())
-    .then(data => {
-      const workbook = XLSX.read(data, {type: 'array'});
-      const primeraHoja = workbook.SheetNames[0];
-      const hoja = workbook.Sheets[primeraHoja];
-      const datos = XLSX.utils.sheet_to_json(hoja, {header:1});
-
-      const datalist = document.getElementById("articulos");
-      datalist.innerHTML = "";
-      datos.forEach(fila => {
-        if (fila[0]) {
-          const option = document.createElement("option");
-          option.value = fila[0];
-          datalist.appendChild(option);
-        }
-      });
-      console.log("Inventario cargado automáticamente desde /estatica.");
+    document.getElementById("exportar").addEventListener("click", function() {
+      if (registros.length === 0) {
+        alert("No hay registros para exportar.");
+        return;
+      }
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(registros);
+      XLSX.utils.book_append_sheet(wb, ws, "Inventario");
+      XLSX.writeFile(wb, "Inventario.xlsx");
     });
-});
-</script>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  </script>
 </body>
 </html>
+
