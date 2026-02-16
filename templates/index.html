@@ -6,48 +6,31 @@
   <title>Inventario</title>
   <link rel="icon" type="image/png" href="/logo.png.webp">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <style>
-    body { background-color: #FFF9E6; font-family: 'Segoe UI', sans-serif; }
-    h1 { background-color: #E63946; color: #FFFFFF; padding: 15px; border-radius: 8px; }
-    .btn-success { background-color: #E63946; border: none; }
-    .btn-success:hover { background-color: #d62828; }
-    .btn-warning { background-color: #FFD166; color: #073B4C; font-weight: bold; border: none; }
-    .btn-warning:hover { background-color: #fcbf49; }
-    .btn-danger { background-color: #E63946; border: none; }
-    .btn-danger:hover { background-color: #d62828; }
-    .form-label { font-weight: bold; color: #073B4C; }
-    .list-group-item { font-size: 1rem; display: flex; justify-content: space-between; align-items: center; }
-  </style>
 </head>
-<body>
+<body style="background-color:#FFF9E6; font-family:'Segoe UI', sans-serif;">
   <div class="container mt-4">
-    <!-- Encabezado con logo -->
-    <h1 class="text-center mb-4 text-uppercase fw-bold d-flex align-items-center justify-content-center">
+    <h1 class="text-center mb-4 text-uppercase fw-bold d-flex align-items-center justify-content-center" style="background-color:#E63946; color:#fff; padding:15px; border-radius:8px;">
       <img src="/logo.png.webp" alt="Logo" style="height:40px; margin-right:10px;">
       Inventario
     </h1>
 
-    <!-- Formulario -->
-    <div class="card p-3 mb-4">
-      <form id="formulario">
-        <div class="mb-3">
-          <label class="form-label">Código</label>
-          <input type="text" id="codigo" class="form-control" required>
-        </div>
-        <div class="mb-3">
-          <label class="form-label">Descripción</label>
-          <input type="text" id="descripcion" class="form-control" required>
-        </div>
-        <div class="mb-3">
-          <label class="form-label">Fecha de vencimiento</label>
-          <input type="date" id="fecha" class="form-control" required>
-        </div>
-        <button type="submit" class="btn btn-success">Agregar</button>
-        <button type="button" id="exportar" class="btn btn-warning ms-2">Exportar a Excel</button>
-      </form>
-    </div>
+    <form id="formulario" class="card p-3 mb-4">
+      <div class="mb-3">
+        <label class="form-label">Código</label>
+        <input type="text" id="codigo" class="form-control" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Descripción</label>
+        <input type="text" id="descripcion" class="form-control" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Fecha de vencimiento</label>
+        <input type="date" id="fecha" class="form-control" required>
+      </div>
+      <button type="submit" class="btn btn-success">Agregar</button>
+      <button type="button" id="exportar" class="btn btn-warning ms-2">Exportar a Excel</button>
+    </form>
 
-    <!-- Lista -->
     <h4>Productos agregados:</h4>
     <ul id="lista-items" class="list-group mt-3"></ul>
   </div>
@@ -62,4 +45,27 @@
       const descripcion = document.getElementById("descripcion").value;
       const fecha = document.getElementById("fecha").value;
 
-      const lista = document.getElementById("
+      const lista = document.getElementById("lista-items");
+      const item = document.createElement("li");
+      item.className = "list-group-item d-flex justify-content-between align-items-center";
+      item.textContent = `${codigo} - ${descripcion} (${fecha})`;
+
+      lista.appendChild(item);
+      registros.push({Codigo: codigo, Descripción: descripcion, Fecha: fecha});
+
+      document.getElementById("formulario").reset();
+    });
+
+    document.getElementById("exportar").addEventListener("click", function() {
+      if (registros.length === 0) {
+        alert("No hay registros para exportar.");
+        return;
+      }
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(registros);
+      XLSX.utils.book_append_sheet(wb, ws, "Inventario");
+      XLSX.writeFile(wb, "Inventario.xlsx");
+    });
+  </script>
+</body>
+</html>
