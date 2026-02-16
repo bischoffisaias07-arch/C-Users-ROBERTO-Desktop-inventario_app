@@ -3,21 +3,20 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Archivo Vencimiento</title>
-  <!-- Logo en pestaña -->
+  <title>Inventario</title>
   <link rel="icon" type="image/png" href="/logo.png.webp">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
     body { background-color: #FFF9E6; font-family: 'Segoe UI', sans-serif; }
     h1 { background-color: #E63946; color: #FFFFFF; padding: 15px; border-radius: 8px; }
-    .card { border-radius: 12px; }
     .btn-success { background-color: #E63946; border: none; }
     .btn-success:hover { background-color: #d62828; }
     .btn-warning { background-color: #FFD166; color: #073B4C; font-weight: bold; border: none; }
     .btn-warning:hover { background-color: #fcbf49; }
+    .btn-danger { background-color: #E63946; border: none; }
+    .btn-danger:hover { background-color: #d62828; }
     .form-label { font-weight: bold; color: #073B4C; }
-    .list-group-item { font-size: 1rem; }
+    .list-group-item { font-size: 1rem; display: flex; justify-content: space-between; align-items: center; }
   </style>
 </head>
 <body>
@@ -29,27 +28,31 @@
     </h1>
 
     <!-- Formulario -->
-    <form id="formulario">
-      <div class="mb-3">
-        <label class="form-label">Código</label>
-        <input type="text" id="codigo" class="form-control" required>
-      </div>
-      <div class="mb-3">
-        <label class="form-label">Descripción</label>
-        <input type="text" id="descripcion" class="form-control" required>
-      </div>
-      <div class="mb-3">
-        <label class="form-label">Fecha</label>
-        <input type="date" id="fecha" class="form-control" required>
-      </div>
-      <button type="submit" class="btn btn-success">Agregar</button>
-      <button type="button" id="exportar" class="btn btn-warning ms-2">Exportar a Excel</button>
-    </form>
+    <div class="card p-3 mb-4">
+      <form id="formulario">
+        <div class="mb-3">
+          <label class="form-label">Código</label>
+          <input type="text" id="codigo" class="form-control" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Descripción</label>
+          <input type="text" id="descripcion" class="form-control" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Fecha de vencimiento</label>
+          <input type="date" id="fecha" class="form-control" required>
+        </div>
+        <button type="submit" class="btn btn-success">Agregar</button>
+        <button type="button" id="exportar" class="btn btn-warning ms-2">Exportar a Excel</button>
+      </form>
+    </div>
 
     <!-- Lista -->
-    <ul id="lista-items" class="list-group mt-4"></ul>
+    <h4>Productos agregados:</h4>
+    <ul id="lista-items" class="list-group mt-3"></ul>
   </div>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script>
     const registros = [];
 
@@ -62,7 +65,21 @@
       const lista = document.getElementById("lista-items");
       const item = document.createElement("li");
       item.className = "list-group-item";
-      item.textContent = `${codigo} - ${descripcion} (${fecha})`;
+
+      const texto = document.createElement("span");
+      texto.textContent = `${codigo} - ${descripcion} (${fecha})`;
+
+      const btnBorrar = document.createElement("button");
+      btnBorrar.className = "btn btn-danger btn-sm ms-2";
+      btnBorrar.textContent = "Borrar";
+      btnBorrar.onclick = () => {
+        lista.removeChild(item);
+        const index = registros.findIndex(r => r.Codigo === codigo);
+        if (index > -1) registros.splice(index, 1);
+      };
+
+      item.appendChild(texto);
+      item.appendChild(btnBorrar);
       lista.appendChild(item);
 
       registros.push({Codigo: codigo, Descripción: descripcion, Fecha: fecha});
@@ -83,4 +100,3 @@
   </script>
 </body>
 </html>
-
