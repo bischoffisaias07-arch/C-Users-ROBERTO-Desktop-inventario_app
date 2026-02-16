@@ -414,20 +414,7 @@ async function saveEdit(codigo) {
         mostrarMensaje('Error al modificar producto', 'danger');
     }
 }
-</script>
 
-<!-- Input alternativo y lista de ejemplo (usa el mismo datalist `articulos`) -->
-<div class="container mt-2">
-    <div class="mb-3">
-        <input type="text" id="articulo" list="articulos" class="form-control form-control-sm">
-    </div>
-
-    <!-- lista de ejemplo eliminada (sin valores predeterminados) -->
-</div>
-
-<!-- Sin función local de borrado ni valores predeterminados -->
-
-</body>
 </html>
 
 <!-- Tabla dinámica de productos y sincronización con datalist -->
@@ -475,6 +462,7 @@ function borrarProductoTabla(index) {
 renderTablaProductos();
 renderArticulosTabla();
 </script>
+
 
 
 
