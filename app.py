@@ -90,13 +90,11 @@ def guardar_lista():
 @app.delete("/borrar_producto/{codigo}")
 def borrar_producto(codigo: str):
     global lista_productos
-    # Normalizar comparación para evitar problemas por mayúsculas/espacios/tipos
     def codigo_ok(p):
         try:
             return str(p.get("Codigo", "")).strip().upper()
         except Exception:
             return ""
-
     codigo_norm = str(codigo).strip().upper()
     lista_productos = [p for p in lista_productos if codigo_ok(p) != codigo_norm]
     return {"mensaje": "Producto eliminado", "lista": lista_productos}
@@ -105,24 +103,19 @@ def borrar_producto(codigo: str):
 def obtener_nombres():
     return {"nombres": df["descripcion"].dropna().unique().tolist()}
 
-
 @app.get("/api/articulos")
 def get_articulos():
     try:
-        # Devolver los nombres desde el DataFrame si está disponible
-        return df["descripcion"].dropna().unique().tolist()
+        return df[["codigo", "descripcion"]].dropna().to_dict(orient="records")
     except Exception:
-        # Fallback de ejemplo
-        return ["Producto A", "Producto B", "Producto C"]
+        return [{"codigo": "000", "descripcion": "Producto A"}]
 
 @app.get("/lista")
 def get_lista():
     return {"lista": lista_productos}
 
-
 @app.put("/modificar_producto/{codigo}")
 def modificar_producto(codigo: str, nueva_fecha: str):
-    # Normalizar comparación (ignorar mayúsculas/espacios)
     codigo_norm = str(codigo).strip().upper()
     for p in lista_productos:
         try:
