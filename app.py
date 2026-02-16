@@ -89,6 +89,10 @@ def borrar_producto(codigo: str):
     lista_productos = [p for p in lista_productos if str(p.get("Codigo", "")).strip().upper() != codigo_norm]
     return {"mensaje": "Producto eliminado", "lista": lista_productos}
 
+@app.get("/nombres")
+def obtener_nombres():
+    return {"nombres": df["descripcion"].dropna().unique().tolist()}
+
 @app.get("/api/articulos")
 def get_articulos():
     try:
