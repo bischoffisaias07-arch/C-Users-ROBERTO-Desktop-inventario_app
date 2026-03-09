@@ -32,6 +32,12 @@ class Producto(BaseModel):
     codigo: str | None = None
     descripcion: str | None = None
     fecha_vencimiento: str
+    stock: str | None = None
+
+
+class ProductoModificar(BaseModel):
+    fecha_vencimiento: str
+    stock: str | None = None
 
 def estado_vencimiento(fecha_vencimiento: str) -> str:
     hoy = datetime.today().date()
@@ -66,10 +72,12 @@ def agregar_producto(prod: Producto):
         if p["Codigo"] == datos.get("codigo", ""):
             raise HTTPException(status_code=400, detail="Producto ya agregado")
 
+    stock_value = prod.stock if prod.stock is not None else str(datos.get("stock", ""))
+
     lista_productos.append({
         "Codigo": datos.get("codigo", ""),
         "Descripcion": datos.get("descripcion", ""),
-        "Stock": datos.get("stock", ""),
+        "Stock": stock_value,
         "FechaVencimiento": prod.fecha_vencimiento,
         "Estado": estado_vencimiento(prod.fecha_vencimiento)
     })
@@ -121,7 +129,7 @@ def get_lista():
 
 
 @app.put("/modificar_producto/{codigo}")
-def modificar_producto(codigo: str, nueva_fecha: str):
+def modificar_producto(codigo: str, body: ProductoModificar):
     # Normalizar comparación (ignorar mayúsculas/espacios)
     codigo_norm = str(codigo).strip().upper()
     for p in lista_productos:
@@ -130,8 +138,10 @@ def modificar_producto(codigo: str, nueva_fecha: str):
         except Exception:
             p_codigo = ""
         if p_codigo == codigo_norm:
-            p["FechaVencimiento"] = nueva_fecha
-            p["Estado"] = estado_vencimiento(nueva_fecha)
+            p["FechaVencimiento"] = body.fecha_vencimiento
+            p["Estado"] = estado_vencimiento(body.fecha_vencimiento)
+            if body.stock is not None:
+                p["Stock"] = body.stock
             return {"mensaje": "Producto modificado", "lista": lista_productos}
     raise HTTPException(status_code=404, detail="Producto no encontrado")
 

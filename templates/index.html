@@ -22,20 +22,27 @@
         <h4 class="mb-3 text-success">➕ Agregar producto</h4>
         <div class="row g-3">
             
-            <div class="col-md-4">
-    <label class="form-label">Código</label>
-    <input type="text" id="codigo" class="form-control form-control-sm" 
-           placeholder="Codigo" />
-</div>
+            <div class="col-md-3">
+                <label class="form-label">Código</label>
+                <input type="tel" id="codigo" inputmode="numeric" pattern="[0-9]*"
+                       class="form-control form-control-sm" placeholder="Codigo" />
+            </div>
 
-         <div class="col-md-4">
+            <div class="col-md-3">
                 <label class="form-label">Nombre del artículo</label>
                 <input type="text" id="nombre" list="articulos" class="form-control form-control-sm" placeholder="Seleccione o escribe para filtrar">
                 <datalist id="articulos">
                     <!-- opciones dinámicas -->
                 </datalist>
             </div>
-            <div class="col-md-4">
+
+            <div class="col-md-3">
+                <label class="form-label">Stock</label>
+                <input type="tel" id="stock" inputmode="numeric" pattern="[0-9]*"
+                       class="form-control form-control-sm" placeholder="Cantidad">
+            </div>
+
+            <div class="col-md-3">
                 <label class="form-label">Fecha de vencimiento</label>
                 <input type="date" id="fecha" class="form-control form-control-sm">
             </div>
@@ -105,7 +112,7 @@ async function cargarListaInicial() {
 }
 cargarListaInicial();
 
-// Permitir Enter en código para saltar a fecha
+// Permitir Enter en código para saltar a stock
 document.getElementById("codigo").addEventListener("keypress", function(e) {
     if (e.key === "Enter") {
         e.preventDefault();
@@ -119,11 +126,11 @@ document.getElementById("codigo").addEventListener("keypress", function(e) {
             mostrarMensaje("Ingresa código o nombre", "warning");
             return;
         }
-        document.getElementById("fecha").focus();
+        document.getElementById("stock").focus();
     }
 });
 
-// Permitir Enter en nombre para saltar a fecha
+// Permitir Enter en nombre para saltar a stock
 document.getElementById("nombre").addEventListener("keypress", function(e) {
     if (e.key === "Enter") {
         e.preventDefault();
@@ -137,6 +144,14 @@ document.getElementById("nombre").addEventListener("keypress", function(e) {
             mostrarMensaje("Ingresa código o nombre", "warning");
             return;
         }
+        document.getElementById("stock").focus();
+    }
+});
+
+// Permitir Enter en stock para saltar a fecha
+document.getElementById("stock").addEventListener("keypress", function(e) {
+    if (e.key === "Enter") {
+        e.preventDefault();
         document.getElementById("fecha").focus();
     }
 });
@@ -153,7 +168,8 @@ async function agregarProducto() {
     const data = {
         codigo: document.getElementById("codigo").value,
         descripcion: document.getElementById("nombre").value,
-        fecha_vencimiento: document.getElementById("fecha").value
+        fecha_vencimiento: document.getElementById("fecha").value,
+        stock: document.getElementById("stock").value || null
     };
     if (data.codigo && data.descripcion) {
         mostrarMensaje("Ingresa SOLO código O nombre, no ambos", "warning");
@@ -178,6 +194,7 @@ async function agregarProducto() {
         mostrarMensaje("✅ Producto agregado correctamente", "success");
         document.getElementById("codigo").value = "";
         document.getElementById("nombre").value = "";
+        document.getElementById("stock").value = "";
         document.getElementById("fecha").value = "";
         document.getElementById("codigo").focus();
     } else {
@@ -251,6 +268,7 @@ function renderLista(lista) {
                 <div>
                     <strong>Código:</strong> ${p.Codigo} | <strong>Fecha:</strong> <span class="fecha">${p.FechaVencimiento}</span><br>
                     <strong>Descripción:</strong> ${p.Descripcion}<br>
+                    <strong>Stock:</strong> <span class="stock">${p.Stock !== undefined && p.Stock !== '' ? p.Stock : '-'}</span><br>
                     <strong>Estado:</strong> ${p.Estado}
                 </div>
                 <div>
@@ -266,20 +284,30 @@ function renderLista(lista) {
 
 // (La edición ahora usa startEdit/saveEdit/cancelEdit)
 
-// Iniciar edición en línea de la fecha: mostrar input[type=date]
+// Iniciar edición en línea de la fecha y el stock
 function startEdit(codigo) {
     const li = document.querySelector(`li[data-codigo="${codigo}"]`);
     if (!li) return;
     const spanFecha = li.querySelector('.fecha');
-    const current = spanFecha ? spanFecha.textContent.trim() : '';
+    const spanStock = li.querySelector('.stock');
+    const currentFecha = spanFecha ? spanFecha.textContent.trim() : '';
+    const currentStock = spanStock ? spanStock.textContent.trim().replace('-', '') : '';
     // Crear input date
-    const input = document.createElement('input');
-    input.type = 'date';
-    input.className = 'form-control form-control-sm d-inline-block';
-    input.style.width = 'auto';
-    // Si current tiene formato YYYY-MM-DD, usarlo
-    input.value = current || '';
-    spanFecha.replaceWith(input);
+    const inputFecha = document.createElement('input');
+    inputFecha.type = 'date';
+    inputFecha.className = 'form-control form-control-sm d-inline-block input-edit-fecha';
+    inputFecha.style.width = 'auto';
+    inputFecha.value = currentFecha || '';
+    spanFecha.replaceWith(inputFecha);
+    // Crear input stock
+    const inputStock = document.createElement('input');
+    inputStock.type = 'tel';
+    inputStock.inputMode = 'numeric';
+    inputStock.pattern = '[0-9]*';
+    inputStock.className = 'form-control form-control-sm d-inline-block input-edit-stock';
+    inputStock.style.width = '80px';
+    inputStock.value = currentStock;
+    spanStock.replaceWith(inputStock);
     // Mostrar botones guardar/cancelar
     li.querySelectorAll('.btn-modificar').forEach(b=>b.classList.add('d-none'));
     li.querySelectorAll('.btn-borrar').forEach(b=>b.classList.add('d-none'));
@@ -292,17 +320,23 @@ function cancelEdit(codigo) {
     cargarListaInicial(); // recargar la lista para restaurar el contenido original
 }
 
-// Guardar edición: enviar nueva fecha y refrescar lista
+// Guardar edición: enviar nueva fecha y stock, refrescar lista
 async function saveEdit(codigo) {
     const li = document.querySelector(`li[data-codigo="${codigo}"]`);
     if (!li) return;
-    const input = li.querySelector('input[type="date"]');
-    if (!input) return;
-    const nuevaFecha = input.value;
+    const inputFecha = li.querySelector('input.input-edit-fecha');
+    const inputStock = li.querySelector('input.input-edit-stock');
+    if (!inputFecha) return;
+    const nuevaFecha = inputFecha.value;
     if (!nuevaFecha) return mostrarMensaje('Ingrese una fecha válida', 'warning');
+    const nuevoStock = inputStock ? inputStock.value : null;
     try {
-        const url = `/modificar_producto/${encodeURIComponent(codigo)}?nueva_fecha=${encodeURIComponent(nuevaFecha)}`;
-        const resp = await fetch(url, { method: 'PUT' });
+        const url = `/modificar_producto/${encodeURIComponent(codigo)}`;
+        const resp = await fetch(url, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({fecha_vencimiento: nuevaFecha, stock: nuevoStock || null})
+        });
         if (!resp.ok) {
             let err = {};
             try { err = await resp.json(); } catch(e) {}
@@ -317,10 +351,11 @@ async function saveEdit(codigo) {
             const leftDiv = li.querySelector('div');
             if (leftDiv) {
                 leftDiv.innerHTML = `
-                                <strong>Código:</strong> ${updated.Codigo} | <strong>Fecha:</strong> <span class="fecha">${updated.FechaVencimiento}</span><br>
-                                <strong>Descripción:</strong> ${updated.Descripcion}<br>
-                                <strong>Estado:</strong> ${updated.Estado}
-                        `;
+                    <strong>Código:</strong> ${updated.Codigo} | <strong>Fecha:</strong> <span class="fecha">${updated.FechaVencimiento}</span><br>
+                    <strong>Descripción:</strong> ${updated.Descripcion}<br>
+                    <strong>Stock:</strong> <span class="stock">${updated.Stock !== undefined && updated.Stock !== '' ? updated.Stock : '-'}</span><br>
+                    <strong>Estado:</strong> ${updated.Estado}
+                `;
             }
             // alternar botones: ocultar guardar/cancelar y mostrar modificar/borrar
             li.querySelectorAll('.btn-guardar').forEach(b=>b.classList.add('d-none'));
@@ -400,6 +435,10 @@ renderArticulosTabla();
 </script>
 <script>
 document.getElementById("codigo").addEventListener("input", function() {
+    // Elimina cualquier cosa que no sea número
+    this.value = this.value.replace(/[^0-9]/g, '');
+});
+document.getElementById("stock").addEventListener("input", function() {
     // Elimina cualquier cosa que no sea número
     this.value = this.value.replace(/[^0-9]/g, '');
 });
