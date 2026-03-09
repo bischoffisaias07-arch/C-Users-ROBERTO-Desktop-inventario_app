@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import FastAPI, Request, HTTPException, BackgroundTasks
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -6,6 +6,8 @@ from pydantic import BaseModel
 import pandas as pd
 from datetime import datetime
 import uuid
+import os
+import tempfile
 
 # 1️⃣ Crear la aplicación FastAPI
 app = FastAPI()
@@ -32,6 +34,12 @@ class Producto(BaseModel):
     codigo: str | None = None
     descripcion: str | None = None
     fecha_vencimiento: str
+    stock: str | None = None
+
+
+class ProductoModificar(BaseModel):
+    fecha_vencimiento: str
+    stock: str | None = None
 
 def estado_vencimiento(fecha_vencimiento: str) -> str:
     hoy = datetime.today().date()
@@ -66,10 +74,12 @@ def agregar_producto(prod: Producto):
         if p["Codigo"] == datos.get("codigo", ""):
             raise HTTPException(status_code=400, detail="Producto ya agregado")
 
+    stock_value = prod.stock if prod.stock is not None else str(datos.get("stock", ""))
+
     lista_productos.append({
         "Codigo": datos.get("codigo", ""),
         "Descripcion": datos.get("descripcion", ""),
-        "Stock": datos.get("stock", ""),
+        "Stock": stock_value,
         "FechaVencimiento": prod.fecha_vencimiento,
         "Estado": estado_vencimiento(prod.fecha_vencimiento)
     })
@@ -77,13 +87,14 @@ def agregar_producto(prod: Producto):
     return {"mensaje": "Producto agregado", "lista": lista_productos}
 
 @app.post("/guardar_lista")
-def guardar_lista():
+def guardar_lista(background_tasks: BackgroundTasks):
     if not lista_productos:
         raise HTTPException(status_code=400, detail="Lista vacía")
 
     df_final = pd.DataFrame(lista_productos)
-    nombre_archivo = f"lista_{uuid.uuid4().hex}.xlsx"
+    nombre_archivo = os.path.join(tempfile.gettempdir(), f"lista_{uuid.uuid4().hex}.xlsx")
     df_final.to_excel(nombre_archivo, index=False)
+    background_tasks.add_task(os.remove, nombre_archivo)
 
     return FileResponse(nombre_archivo, filename="lista_final.xlsx")
 
@@ -109,11 +120,21 @@ def obtener_nombres():
 @app.get("/api/articulos")
 def get_articulos():
     try:
-        # Devolver los nombres desde el DataFrame si está disponible
         return df["descripcion"].dropna().unique().tolist()
     except Exception:
-        # Fallback de ejemplo
         return ["Producto A", "Producto B", "Producto C"]
+
+@app.get("/buscar_articulos")
+def buscar_articulos(q: str = ""):
+    """Devuelve hasta 30 artículos cuya descripción contiene el texto buscado.
+    Usado por el autocompletado del campo nombre en móvil para evitar cargar 8000+ opciones."""
+    if not q or len(q.strip()) < 2:
+        return []
+    try:
+        matches = df[df["descripcion"].str.contains(q.strip(), case=False, na=False, regex=False)]["descripcion"].dropna().unique().tolist()
+        return matches[:30]
+    except Exception:
+        return []
 
 @app.get("/lista")
 def get_lista():
@@ -121,7 +142,7 @@ def get_lista():
 
 
 @app.put("/modificar_producto/{codigo}")
-def modificar_producto(codigo: str, nueva_fecha: str):
+def modificar_producto(codigo: str, body: ProductoModificar):
     # Normalizar comparación (ignorar mayúsculas/espacios)
     codigo_norm = str(codigo).strip().upper()
     for p in lista_productos:
@@ -130,8 +151,10 @@ def modificar_producto(codigo: str, nueva_fecha: str):
         except Exception:
             p_codigo = ""
         if p_codigo == codigo_norm:
-            p["FechaVencimiento"] = nueva_fecha
-            p["Estado"] = estado_vencimiento(nueva_fecha)
+            p["FechaVencimiento"] = body.fecha_vencimiento
+            p["Estado"] = estado_vencimiento(body.fecha_vencimiento)
+            if body.stock is not None:
+                p["Stock"] = body.stock
             return {"mensaje": "Producto modificado", "lista": lista_productos}
     raise HTTPException(status_code=404, detail="Producto no encontrado")
 
