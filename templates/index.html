@@ -383,64 +383,17 @@ async function saveEdit(codigo) {
 
 <!-- Sin función local de borrado ni valores predeterminados -->
 
-</body>
-</html>
-
-<!-- Tabla dinámica de productos y sincronización con datalist -->
-<div class="container mt-3">
-  
-    <table id="tablaProductos" class="table table-sm"></table>
-</div>
-
-<script>
-// Datos simulados para la tabla
-let productosTabla = [];
-
-function renderArticulosTabla() {
-    const datalist = document.getElementById("articulos");
-    if (!datalist) return;
-    datalist.innerHTML = "";
-    productosTabla.forEach(p => {
-        const option = document.createElement("option");
-        option.value = p;
-        datalist.appendChild(option);
-    });
-}
-
-function renderTablaProductos() {
-    const tabla = document.getElementById("tablaProductos");
-    if (!tabla) return;
-    tabla.innerHTML = "";
-    productosTabla.forEach((p, i) => {
-        const fila = document.createElement("tr");
-        fila.innerHTML = `
-            <td>${p}</td>
-            <td><button class="btn btn-sm btn-danger" onclick="borrarProductoTabla(${i})">Borrar</button></td>
-        `;
-        tabla.appendChild(fila);
-    });
-}
-
-function borrarProductoTabla(index) {
-    productosTabla.splice(index, 1); // borra del array
-    renderTablaProductos();              // refresca tabla
-    renderArticulosTabla();          // refresca desplegable
-}
-
-// Render inicial
-renderTablaProductos();
-renderArticulosTabla();
-</script>
 <script>
 document.getElementById("codigo").addEventListener("input", function() {
-    // Elimina cualquier cosa que no sea número
     this.value = this.value.replace(/[^0-9]/g, '');
 });
 document.getElementById("stock").addEventListener("input", function() {
-    // Elimina cualquier cosa que no sea número
     this.value = this.value.replace(/[^0-9]/g, '');
 });
 </script>
+
+</body>
+</html>
 
 
 
