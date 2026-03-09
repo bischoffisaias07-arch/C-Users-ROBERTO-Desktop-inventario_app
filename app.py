@@ -120,11 +120,21 @@ def obtener_nombres():
 @app.get("/api/articulos")
 def get_articulos():
     try:
-        # Devolver los nombres desde el DataFrame si está disponible
         return df["descripcion"].dropna().unique().tolist()
     except Exception:
-        # Fallback de ejemplo
         return ["Producto A", "Producto B", "Producto C"]
+
+@app.get("/buscar_articulos")
+def buscar_articulos(q: str = ""):
+    """Devuelve hasta 30 artículos cuya descripción contiene el texto buscado.
+    Usado por el autocompletado del campo nombre en móvil para evitar cargar 8000+ opciones."""
+    if not q or len(q.strip()) < 2:
+        return []
+    try:
+        matches = df[df["descripcion"].str.contains(q.strip(), case=False, na=False, regex=False)]["descripcion"].dropna().unique().tolist()
+        return matches[:30]
+    except Exception:
+        return []
 
 @app.get("/lista")
 def get_lista():
