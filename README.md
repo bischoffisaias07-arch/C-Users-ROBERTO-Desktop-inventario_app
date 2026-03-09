@@ -12,13 +12,22 @@ App web para gestionar y controlar las fechas de vencimiento de productos.
 - 🎨 Diseño responsive y moderno
 - 💾 Almacenamiento en base de datos
 
-## 📋 Requisitos
+## 🌐 Ver la app en línea (Render – gratis)
 
-- Python 3.7+
-- Flask
+1. Crea una cuenta en [render.com](https://render.com) (gratis).
+2. Clic en **New → Web Service** y conecta este repositorio de GitHub.
+3. Render detecta automáticamente el archivo `render.yaml` y configura todo.
+4. Hacé clic en **Deploy** y en unos minutos recibirás una URL pública como:
+   ```
+   https://inventario-app.onrender.com
+   ```
+
+## 📋 Requisitos (local)
+
+- Python 3.9+
 - pip
 
-## ⚙️ Instalación
+## ⚙️ Instalación local
 
 1. **Clona o descarga el repositorio**
 
@@ -29,12 +38,12 @@ pip install -r requirements.txt
 
 3. **Ejecuta la aplicación:**
 ```bash
-python app.py
+uvicorn app:app --reload
 ```
 
 4. **Abre en tu navegador:**
 ```
-http://localhost:5000
+http://localhost:8000
 ```
 
 ## 📁 Estructura del Proyecto
