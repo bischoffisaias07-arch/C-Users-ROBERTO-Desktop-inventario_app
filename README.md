@@ -50,11 +50,11 @@ http://localhost:8000
 
 ```
 inventario_app/
-├── app.py                 # Aplicación principal (Flask)
+├── app.py                 # Aplicación principal (FastAPI)
 ├── requirements.txt       # Dependencias
+├── Inventario.xlsx        # Base de datos de productos
 ├── templates/
 │   └── index.html        # Página principal
-├── products.json         # Base de datos (se crea automáticamente)
 └── README.md            # Este archivo
 ```
 
@@ -73,9 +73,9 @@ inventario_app/
 
 ## 💡 Notas
 
-- Los datos se guardan en `products.json`
-- La app funciona sin conexión a internet
-- Puedes usar en cualquier navegador moderno
+- Los datos de productos se leen de `Inventario.xlsx`
+- La lista generada se descarga como archivo Excel
+- La app funciona en cualquier navegador moderno
 
 ## 📝 Autor
 

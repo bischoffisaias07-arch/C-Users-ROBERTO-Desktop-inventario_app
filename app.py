@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import FastAPI, Request, HTTPException, BackgroundTasks
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -6,6 +6,8 @@ from pydantic import BaseModel
 import pandas as pd
 from datetime import datetime
 import uuid
+import os
+import tempfile
 
 # 1️⃣ Crear la aplicación FastAPI
 app = FastAPI()
@@ -85,13 +87,14 @@ def agregar_producto(prod: Producto):
     return {"mensaje": "Producto agregado", "lista": lista_productos}
 
 @app.post("/guardar_lista")
-def guardar_lista():
+def guardar_lista(background_tasks: BackgroundTasks):
     if not lista_productos:
         raise HTTPException(status_code=400, detail="Lista vacía")
 
     df_final = pd.DataFrame(lista_productos)
-    nombre_archivo = f"lista_{uuid.uuid4().hex}.xlsx"
+    nombre_archivo = os.path.join(tempfile.gettempdir(), f"lista_{uuid.uuid4().hex}.xlsx")
     df_final.to_excel(nombre_archivo, index=False)
+    background_tasks.add_task(os.remove, nombre_archivo)
 
     return FileResponse(nombre_archivo, filename="lista_final.xlsx")
 
