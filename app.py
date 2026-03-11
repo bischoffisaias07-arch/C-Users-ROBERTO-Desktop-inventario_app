@@ -6,6 +6,7 @@ from pydantic import BaseModel
 import pandas as pd
 from datetime import datetime
 import uuid
+import os
 
 # 1️⃣ Crear la aplicación FastAPI
 app = FastAPI()
@@ -18,19 +19,49 @@ templates = Jinja2Templates(directory="templates")
 async def home(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
-# 3️⃣ Cargar Excel base
-try:
-    df = pd.read_excel("Inventario.xlsx")
-    df.columns = df.columns.str.strip().str.lower()
-except FileNotFoundError:
-    df = pd.DataFrame(columns=["codigo", "descripcion", "stock"])
+# 3️⃣ Función para normalizar código/EAN (quita ceros al inicio)
+def normalizar_codigo(valor):
+    try:
+        return str(valor).strip().lstrip('0') or '0'
+    except Exception:
+        return str(valor)
 
-# 4️⃣ Lista temporal
+# 4️⃣ Cargar Excel base - DOS ARCHIVOS
+df_principal = pd.DataFrame(columns=["codigo", "descripcion", "stock"])
+df_ean = pd.DataFrame(columns=["ean", "codigo", "descripcion", "stock"])
+
+if os.path.exists("Inventario.xlsx"):
+    try:
+        df_principal = pd.read_excel("Inventario.xlsx")
+        df_principal.columns = df_principal.columns.str.strip().str.lower()
+    except Exception as e:
+        print(f"Error cargando Inventario.xlsx: {e}")
+
+if os.path.exists("Inventario_EAN.xlsx"):
+    try:
+        df_ean = pd.read_excel("Inventario_EAN.xlsx")
+        df_ean.columns = df_ean.columns.str.strip().str.lower()
+    except Exception as e:
+        print(f"Error cargando Inventario_EAN.xlsx: {e}")
+
+if not df_ean.empty:
+    df = pd.concat([df_principal, df_ean], ignore_index=True)
+    df['codigo_normalizado'] = df['codigo'].apply(normalizar_codigo)
+    df = df.drop_duplicates(subset=['codigo_normalizado'], keep='first')
+else:
+    df = df_principal.copy()
+    df['codigo_normalizado'] = df['codigo'].apply(normalizar_codigo)
+
+if 'ean' in df.columns:
+    df['ean_normalizado'] = df['ean'].apply(normalizar_codigo)
+
+# 5️⃣ Lista temporal
 lista_productos = []
 
 class Producto(BaseModel):
     codigo: str | None = None
     descripcion: str | None = None
+    ean: str | None = None
     fecha_vencimiento: str
 
 def estado_vencimiento(fecha_vencimiento: str) -> str:
@@ -45,31 +76,39 @@ def estado_vencimiento(fecha_vencimiento: str) -> str:
         return f"Crítico (<7 días)"
     return f"Correcto ({dias} días restantes)"
 
-# 5️⃣ Endpoints
+# 6️⃣ Endpoints
 @app.post("/agregar_producto")
 def agregar_producto(prod: Producto):
     if prod.codigo:
-        producto = df[df["codigo"].astype(str).str.strip().str.upper() == prod.codigo.strip().upper()]
+        codigo_norm = normalizar_codigo(prod.codigo)
+        producto = df[df['codigo_normalizado'] == codigo_norm]
         if producto.empty:
             raise HTTPException(status_code=404, detail="Producto no encontrado por código")
+    elif prod.ean and 'ean_normalizado' in df.columns:
+        ean_norm = normalizar_codigo(prod.ean)
+        producto = df[df['ean_normalizado'] == ean_norm]
+        if producto.empty:
+            raise HTTPException(status_code=404, detail="Producto no encontrado por EAN")
     elif prod.descripcion:
-        producto = df[df["descripcion"].str.contains(prod.descripcion.strip(), case=False)]
+        producto = df[df["descripcion"].str.contains(prod.descripcion.strip(), case=False, na=False)]
         if producto.empty:
             raise HTTPException(status_code=404, detail="Producto no encontrado por descripción")
     else:
-        raise HTTPException(status_code=400, detail="Debe ingresar código o descripción")
+        raise HTTPException(status_code=400, detail="Debe ingresar código, EAN o descripción")
 
-    datos = producto.to_dict(orient="records")[0]
+    datos = producto.iloc[0].to_dict()
 
     # Evitar duplicados por código
+    codigo_original = str(datos.get("codigo", "")).strip()
     for p in lista_productos:
-        if p["Codigo"] == datos.get("codigo", ""):
+        if p["Codigo"] == codigo_original:
             raise HTTPException(status_code=400, detail="Producto ya agregado")
 
     lista_productos.append({
-        "Codigo": datos.get("codigo", ""),
-        "Descripcion": datos.get("descripcion", ""),
+        "Codigo": codigo_original,
+        "Descripcion": str(datos.get("descripcion", "")),
         "Stock": datos.get("stock", ""),
+        "EAN": str(datos.get("ean", "N/A")),
         "FechaVencimiento": prod.fecha_vencimiento,
         "Estado": estado_vencimiento(prod.fecha_vencimiento)
     })
@@ -135,7 +174,7 @@ def modificar_producto(codigo: str, nueva_fecha: str):
             return {"mensaje": "Producto modificado", "lista": lista_productos}
     raise HTTPException(status_code=404, detail="Producto no encontrado")
 
-# 6️⃣ Arranque del servidor
+# 7️⃣ Arranque del servidor
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("app:app", host="127.0.0.1", port=8000, reload=True)
