@@ -18,12 +18,36 @@ templates = Jinja2Templates(directory="templates")
 async def home(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
-# 3️⃣ Cargar Excel base
+# 3️⃣ Cargar Excels base - DOS ARCHIVOS
 try:
-    df = pd.read_excel("Inventario.xlsx")
-    df.columns = df.columns.str.strip().str.lower()
+    df_principal = pd.read_excel("Inventario.xlsx")
+    df_principal.columns = df_principal.columns.str.strip().str.lower()
 except FileNotFoundError:
-    df = pd.DataFrame(columns=["codigo", "descripcion", "stock"])
+    df_principal = pd.DataFrame(columns=["codigo", "descripcion", "stock"])
+
+try:
+    df_ean = pd.read_excel("Inventario_EAN.xlsx")
+    df_ean.columns = df_ean.columns.str.strip().str.lower()
+except FileNotFoundError:
+    df_ean = pd.DataFrame(columns=["ean", "codigo", "descripcion", "stock"])
+
+# Combinar ambos DataFrames (el principal tiene prioridad en duplicados por código)
+df = pd.concat([df_principal, df_ean], ignore_index=True)
+# Remove duplicate codes, but keep rows that have no código (EAN-only rows)
+_has_code = df["codigo"].notna()
+df = pd.concat([
+    df[_has_code].drop_duplicates(subset=["codigo"], keep="first"),
+    df[~_has_code]
+], ignore_index=True)
+
+
+def normalize_code(code) -> str:
+    """Strips leading zeros from a code string for loose comparison (e.g. '0001' == '1').
+    Returns empty string for NaN/None so they never match a real code."""
+    if pd.isna(code):
+        return ""
+    stripped = str(code).strip().lstrip("0")
+    return stripped if stripped else "0"
 
 # 4️⃣ Lista temporal
 lista_productos = []
@@ -31,6 +55,7 @@ lista_productos = []
 class Producto(BaseModel):
     codigo: str | None = None
     descripcion: str | None = None
+    ean: str | None = None
     fecha_vencimiento: str
 
 def estado_vencimiento(fecha_vencimiento: str) -> str:
@@ -49,15 +74,28 @@ def estado_vencimiento(fecha_vencimiento: str) -> str:
 @app.post("/agregar_producto")
 def agregar_producto(prod: Producto):
     if prod.codigo:
-        producto = df[df["codigo"].astype(str).str.strip().str.upper() == prod.codigo.strip().upper()]
+        norm_input = normalize_code(prod.codigo)
+        # Search by código (ignoring leading zeros)
+        producto = df[df["codigo"].astype(str).apply(normalize_code) == norm_input]
+        # If not found by código, try matching against EAN column
+        if producto.empty and "ean" in df.columns:
+            producto = df[df["ean"].astype(str).apply(normalize_code) == norm_input]
         if producto.empty:
             raise HTTPException(status_code=404, detail="Producto no encontrado por código")
+    elif prod.ean:
+        if "ean" in df.columns:
+            norm_ean = normalize_code(prod.ean)
+            producto = df[df["ean"].astype(str).apply(normalize_code) == norm_ean]
+            if producto.empty:
+                raise HTTPException(status_code=404, detail="Producto no encontrado por EAN")
+        else:
+            raise HTTPException(status_code=400, detail="EAN no disponible en la base de datos")
     elif prod.descripcion:
         producto = df[df["descripcion"].str.contains(prod.descripcion.strip(), case=False)]
         if producto.empty:
             raise HTTPException(status_code=404, detail="Producto no encontrado por descripción")
     else:
-        raise HTTPException(status_code=400, detail="Debe ingresar código o descripción")
+        raise HTTPException(status_code=400, detail="Debe ingresar código, EAN o descripción")
 
     datos = producto.to_dict(orient="records")[0]
 
@@ -70,6 +108,7 @@ def agregar_producto(prod: Producto):
         "Codigo": datos.get("codigo", ""),
         "Descripcion": datos.get("descripcion", ""),
         "Stock": datos.get("stock", ""),
+        "EAN": datos.get("ean", "N/A"),
         "FechaVencimiento": prod.fecha_vencimiento,
         "Estado": estado_vencimiento(prod.fecha_vencimiento)
     })
