@@ -8,7 +8,10 @@
     <link rel="stylesheet" href="/static/style.css">
     <link rel="icon" type="image/png" href="/static/logo.webp">
     <style>
-        .btn-group-item { display: flex; flex-wrap: wrap; gap: 4px; }
+        .btn-group-item  { display: flex; flex-wrap: wrap; gap: 4px; }
+        .item-info       { flex: 1 1 200px; }
+        .item-row        { display: flex; flex-wrap: wrap; justify-content: space-between;
+                           align-items: flex-start; gap: 8px; }
     </style>
 </head>
 <body class="bg-light">
@@ -20,9 +23,11 @@
         <h4 class="mb-3 text-success">➕ Agregar producto</h4>
         <div class="row g-3">
             <div class="col-md-4">
-                <label class="form-label">Código</label>
-                <input type="text" id="codigo" class="form-control form-control-sm"
-                       placeholder="Codigo" inputmode="numeric" enterkeyhint="next" />
+                <label class="form-label">Código / EAN</label>
+                <input type="text" id="codigo" list="codigos-ean" class="form-control form-control-sm"
+                       placeholder="Código o EAN" inputmode="numeric" enterkeyhint="next" autocomplete="off" />
+                <datalist id="codigos-ean"></datalist>
+                <small id="preview-codigo" class="text-muted"></small>
             </div>
             <div class="col-md-4">
                 <label class="form-label">Nombre del artículo</label>
@@ -56,14 +61,46 @@ function mostrarMensaje(texto, tipo) {
     msg.classList.remove("d-none");
 }
 
-// Autocompletado lazy: busca sólo cuando el usuario escribe ≥2 caracteres
-let _debounceTimer = null;
+// ── Autocompletado campo CÓDIGO/EAN ──────────────────────────────────────────
+let _timerCod = null;
+document.getElementById("codigo").addEventListener("input", function() {
+    // Solo dígitos
+    this.value = this.value.replace(/[^0-9]/g, "");
+    clearTimeout(_timerCod);
+    const q = this.value.trim();
+    const datalist  = document.getElementById("codigos-ean");
+    const preview   = document.getElementById("preview-codigo");
+    datalist.innerHTML = "";
+    preview.textContent = "";
+    if (q.length < 2) return;
+    _timerCod = setTimeout(async function() {
+        try {
+            const resp = await fetch("/buscar_codigo_ean?q=" + encodeURIComponent(q));
+            if (!resp.ok) return;
+            const items = await resp.json();   // [{codigo, descripcion}, ...]
+            datalist.innerHTML = "";
+            items.forEach(function(item) {
+                const opt = document.createElement("option");
+                opt.value = item.codigo;
+                opt.label = item.descripcion;
+                datalist.appendChild(opt);
+            });
+            // Mostrar preview si hay coincidencia exacta de código o EAN
+            if (items.length === 1) {
+                preview.textContent = items[0].descripcion;
+            }
+        } catch (e) {}
+    }, 200);
+});
+
+// ── Autocompletado campo NOMBRE ───────────────────────────────────────────────
+let _timerNom = null;
 document.getElementById("nombre").addEventListener("input", function() {
-    clearTimeout(_debounceTimer);
+    clearTimeout(_timerNom);
     const q = this.value.trim();
     const datalist = document.getElementById("articulos");
     if (q.length < 2) { datalist.innerHTML = ""; return; }
-    _debounceTimer = setTimeout(async function() {
+    _timerNom = setTimeout(async function() {
         try {
             const resp = await fetch("/buscar_articulos?q=" + encodeURIComponent(q));
             if (!resp.ok) return;
@@ -78,7 +115,7 @@ document.getElementById("nombre").addEventListener("input", function() {
     }, 200);
 });
 
-// Cargar lista actual al inicio
+// ── Cargar lista al inicio ────────────────────────────────────────────────────
 async function cargarListaInicial() {
     try {
         const resp = await fetch("/lista");
@@ -89,12 +126,7 @@ async function cargarListaInicial() {
 }
 cargarListaInicial();
 
-// Filtrar entrada del campo código a sólo dígitos
-document.getElementById("codigo").addEventListener("input", function() {
-    this.value = this.value.replace(/[^0-9]/g, "");
-});
-
-// Enter en código → salta a fecha (keydown para teclados virtuales móvil)
+// ── Navegación con Enter (keydown para teclados virtuales móvil) ──────────────
 document.getElementById("codigo").addEventListener("keydown", function(e) {
     if (e.key !== "Enter") return;
     e.preventDefault();
@@ -105,7 +137,6 @@ document.getElementById("codigo").addEventListener("keydown", function(e) {
     document.getElementById("fecha").focus();
 });
 
-// Enter en nombre → salta a fecha
 document.getElementById("nombre").addEventListener("keydown", function(e) {
     if (e.key !== "Enter") return;
     e.preventDefault();
@@ -116,7 +147,6 @@ document.getElementById("nombre").addEventListener("keydown", function(e) {
     document.getElementById("fecha").focus();
 });
 
-// Enter en fecha → agregar producto
 document.getElementById("fecha").addEventListener("keydown", function(e) {
     if (e.key !== "Enter") return;
     e.preventDefault();
@@ -125,10 +155,11 @@ document.getElementById("fecha").addEventListener("keydown", function(e) {
 
 document.getElementById("btnAgregar").addEventListener("click", agregarProducto);
 
+// ── Agregar producto ──────────────────────────────────────────────────────────
 async function agregarProducto() {
     const data = {
-        codigo: document.getElementById("codigo").value,
-        descripcion: document.getElementById("nombre").value,
+        codigo:            document.getElementById("codigo").value.trim(),
+        descripcion:       document.getElementById("nombre").value.trim(),
         fecha_vencimiento: document.getElementById("fecha").value
     };
     if (data.codigo && data.descripcion) {
@@ -156,6 +187,8 @@ async function agregarProducto() {
             document.getElementById("codigo").value = "";
             document.getElementById("nombre").value = "";
             document.getElementById("fecha").value = "";
+            document.getElementById("preview-codigo").textContent = "";
+            document.getElementById("codigos-ean").innerHTML = "";
             document.getElementById("codigo").focus();
         } else {
             mostrarMensaje(result.detail || "Error al agregar producto", "danger");
@@ -167,6 +200,7 @@ async function agregarProducto() {
 
 document.getElementById("btnGuardar").addEventListener("click", guardarLista);
 
+// ── Guardar lista ─────────────────────────────────────────────────────────────
 async function guardarLista() {
     const cont = document.getElementById("lista");
     if (!cont || cont.children.length === 0) {
@@ -177,9 +211,9 @@ async function guardarLista() {
         const response = await fetch("/guardar_lista", { method: "POST" });
         if (response.ok) {
             const blob = await response.blob();
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
+            const url  = window.URL.createObjectURL(blob);
+            const a    = document.createElement("a");
+            a.href     = url;
             a.download = "lista_final.xlsx";
             document.body.appendChild(a);
             a.click();
@@ -192,15 +226,14 @@ async function guardarLista() {
         try {
             const json = await response.json();
             detail = json.detail || json.mensaje || JSON.stringify(json);
-        } catch (e) {
-            detail = await response.text();
-        }
-        mostrarMensaje("Error al guardar la lista (" + response.status + "): " + detail, "danger");
+        } catch (e) { detail = await response.text(); }
+        mostrarMensaje(`Error al guardar la lista (${response.status}): ${detail}`, "danger");
     } catch (e) {
         mostrarMensaje("Error de conexión al guardar la lista", "danger");
     }
 }
 
+// ── Borrar producto ───────────────────────────────────────────────────────────
 async function borrarProducto(codigo) {
     try {
         const response = await fetch("/borrar_producto/" + encodeURIComponent(codigo), { method: "DELETE" });
@@ -218,6 +251,11 @@ async function borrarProducto(codigo) {
     }
 }
 
+// ── Renderizar lista ──────────────────────────────────────────────────────────
+function liPorCodigo(codigo) {
+    return document.querySelector(`li[data-codigo="${CSS.escape(codigo)}"]`);
+}
+
 function renderLista(lista) {
     const contenedor = document.getElementById("lista");
     contenedor.innerHTML = "";
@@ -226,13 +264,11 @@ function renderLista(lista) {
         const codigo = String(p.Codigo || "");
 
         const li = document.createElement("li");
-        li.className = "list-group-item small";
-        li.style.cssText = "display:flex; flex-wrap:wrap; justify-content:space-between; align-items:flex-start; gap:8px;";
+        li.className = "list-group-item small item-row";
         li.dataset.codigo = codigo;
 
-        // Información del producto (sin innerHTML para evitar XSS)
         const infoDiv = document.createElement("div");
-        infoDiv.style.flex = "1 1 200px";
+        infoDiv.className = "item-info";
 
         const lineaCodigo = document.createElement("span");
         const bCod = document.createElement("strong"); bCod.textContent = "Código: ";
@@ -260,7 +296,6 @@ function renderLista(lista) {
         lineaEstado.appendChild(document.createTextNode(p.Estado || ""));
         infoDiv.appendChild(lineaEstado);
 
-        // Botones
         const botonesDiv = document.createElement("div");
         botonesDiv.className = "btn-group-item";
 
@@ -295,8 +330,9 @@ function renderLista(lista) {
     });
 }
 
+// ── Edición inline de fecha ───────────────────────────────────────────────────
 function startEdit(codigo) {
-    const li = document.querySelector(`li[data-codigo="${CSS.escape(codigo)}"]`);
+    const li = liPorCodigo(codigo);
     if (!li) return;
     const spanFecha = li.querySelector(".fecha");
     const current = spanFecha ? spanFecha.textContent.trim() : "";
@@ -317,7 +353,7 @@ function cancelEdit(codigo) {
 }
 
 async function saveEdit(codigo) {
-    const li = document.querySelector(`li[data-codigo="${CSS.escape(codigo)}"]`);
+    const li = liPorCodigo(codigo);
     if (!li) return;
     const input = li.querySelector("input[type=\"date\"]");
     if (!input) return;
@@ -343,16 +379,6 @@ async function saveEdit(codigo) {
 
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
 
 
 
